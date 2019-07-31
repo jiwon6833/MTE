@@ -108,11 +108,17 @@
 
 
 #include<queue>
+//diwony
+#include "llvm/ADT/SmallPtrSet.h"
+#include<set>
+#include<iostream>
 
 using namespace llvm;
 
 typedef IRBuilder<true, TargetFolder> BuilderTy;
-
+namespace llvm {
+  void initializeSoftBoundCETSPassPass(PassRegistry&);
+}
 class SoftBoundCETSPass: public ModulePass {
 
  private:
@@ -320,6 +326,8 @@ class SoftBoundCETSPass: public ModulePass {
   bool isStructOperand(Value*);
   void addLoadStoreChecks(Instruction*, 
                           std::map<Value*, int>&);
+  //diwony
+  bool findPtrRoot(Value *V, SmallPtrSet<Value *,8> &Visited, Value *&CurRoot);
   void addTemporalChecks(Instruction*, 
                          std::map<Value*, int>&, 
                          std::map<Value*, int>&);
@@ -479,8 +487,9 @@ class SoftBoundCETSPass: public ModulePass {
     BlacklistFile(BlacklistFile){
     spatial_safety= true;
     temporal_safety=true;
-#if 0
-    initializeSoftBoundCETSPass(*PassRegistry::getPassRegistry());
+    //diwony
+#if 1
+    initializeSoftBoundCETSPassPass(*PassRegistry::getPassRegistry());
 #endif
   }
   const char* getPassName() const { return " SoftBoundCETSPass";}

@@ -219,12 +219,10 @@ unsafe_byval_opt
 #endif
 
 // #define SOFTBOUNDCETS_CHK_INTRINSIC 1
-
+//diwony
+#define LV_NAME "softbound cets"
+#define DEBUG_TYPE LV_NAME
 char SoftBoundCETSPass:: ID = 0;
-
-static RegisterPass<SoftBoundCETSPass> P ("SoftBoundCETSPass",
-                                          "SoftBound Pass for Spatial Safety");
-
 
 //
 // Method: getAssociateFuncLock()
@@ -3393,10 +3391,13 @@ void SoftBoundCETSPass::addDereferenceChecks(Function* func) {
       assert(0 && "Atomic Instructions not handled");
     }    
   }
-
-#if 0
+  //diwony
+#if 1
   // spatial check optimizations here 
+  
+  m_dominator_tree = &getAnalysis<DominatorTree>(*func);
 
+  
   for(std::vector<Instruction*>::iterator i = CheckWorkList.begin(), 
 	e = CheckWorkList.end(); i!= e; ++i){
 
@@ -3519,8 +3520,6 @@ void SoftBoundCETSPass::addDereferenceChecks(Function* func) {
   return;
 #endif
   
-  
-  m_dominator_tree = &getAnalysis<DominatorTree>(*func);
 
   /* intra-procedural load dererference check elimination map */
   std::map<Value*, int> func_deref_check_elim_map;
@@ -5162,3 +5161,8 @@ bool SoftBoundCETSPass::runOnModule(Module& module) {
   }
   return true;
 }
+
+static const char lv_name[] = "SoftBoundCETSPass";
+INITIALIZE_PASS_BEGIN(SoftBoundCETSPass, LV_NAME, lv_name, false, false)
+INITIALIZE_PASS_DEPENDENCY(DominatorTree)
+INITIALIZE_PASS_END(SoftBoundCETSPass, LV_NAME, lv_name, false, false)
