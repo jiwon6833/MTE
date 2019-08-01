@@ -486,7 +486,7 @@ class SoftBoundCETSPass: public ModulePass {
    : ModulePass(ID),
     BlacklistFile(BlacklistFile){
     spatial_safety= true;
-    temporal_safety=true;
+    temporal_safety=false; // gykim spatial
     //diwony
 #if 1
     initializeSoftBoundCETSPassPass(*PassRegistry::getPassRegistry());

@@ -4847,7 +4847,7 @@ void SoftBoundCETSPass::identifyOriginalInst (Function * func) {
 bool SoftBoundCETSPass::runOnModule(Module& module) {
 
   spatial_safety = true;
-  temporal_safety = true;
+  temporal_safety = false; // gykim spatial
 
   TD = &getAnalysis<DataLayout>();
   TLI = &getAnalysis<TargetLibraryInfo>();
@@ -4860,9 +4860,10 @@ bool SoftBoundCETSPass::runOnModule(Module& module) {
     spatial_safety = false;
   }
 
-  if(disable_temporal_safety){
-    temporal_safety = false;
-  }
+  // gykim spatial
+  // if(disable_temporal_safety){
+  //   temporal_safety = false;
+  // }
 
   if (module.getPointerSize() == llvm::Module::Pointer64) {
     m_is_64_bit = true;

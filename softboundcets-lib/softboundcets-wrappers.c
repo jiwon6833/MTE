@@ -1588,7 +1588,10 @@ __WEAK_INLINE void* softboundcets_realloc(void* ptr, size_t size){
    size_t ptr_key = 1;
    void* ptr_lock = __softboundcets_global_lock;
 
-#ifdef __SOFTBOUNDCETS_TEMPORAL
+   // gykim spatial
+#ifdef __SOFTBOUNDCETS_SPATIAL
+   // do nothing
+#elif __SOFTBOUNDCETS_TEMPORAL
    ptr_key = __softboundcets_load_key_shadow_stack(1);
    ptr_lock = __softboundcets_load_lock_shadow_stack(1);
 #elif __SOFTBOUNDCETS_SPATIAL_TEMPORAL

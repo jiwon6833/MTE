@@ -51,10 +51,11 @@
 #include <unistd.h>
 #include <assert.h>
 
-
-#if 0
-#define __SOFTBOUNDCETS_SPATIAL_TEMPORAL 1
-#endif
+// gykim sptial
+/* #if 0 */
+/* #define __SOFTBOUNDCETS_SPATIAL_TEMPORAL 1 */
+/* #endif */
+#define __SOFTBOUNDCETS_SPATIAL 1
 
 /* Trie represented by the following by a structure with four fields
  * if both __SOFTBOUNDCETS_SPATIAL and __SOFTBOUNDCETS_TEMPORAL are

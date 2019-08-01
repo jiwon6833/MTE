@@ -402,7 +402,7 @@ class SoftBoundMPXPass: public ModulePass {
 
  SoftBoundMPXPass(): ModulePass(ID){
     spatial_safety= true;
-    temporal_safety=true;
+    temporal_safety=false; // gykim spatial
 
   }
   const char* getPassName() const { return " SoftBoundMPXPass";}

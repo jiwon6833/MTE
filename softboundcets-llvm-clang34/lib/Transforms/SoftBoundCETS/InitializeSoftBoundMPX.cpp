@@ -238,13 +238,14 @@ void InitializeSoftBoundMPX:: constructCheckHandlers(Module & module){
 bool InitializeSoftBoundMPX:: runOnModule (Module& module){
 
   spatial_safety = true;
-  temporal_safety = true;
+  temporal_safety = false; // gykim spatial
   if(disable_spatial_safety){
     spatial_safety = false;
   }
-  if(disable_temporal_safety){
-    temporal_safety = false;
-  }
+  // gykim spatial
+  // if(disable_temporal_safety){
+  //   temporal_safety = false;
+  // }
   
   constructCheckHandlers(module);
   constructShadowStackHandlers(module);
