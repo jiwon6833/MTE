@@ -1,7 +1,7 @@
 all: softboundcets_rt softboundmpx_rt
 
-MPX_FLAGS=-Wall -pedantic -O3 -D__SOFTBOUNDMPX_SPATIAL 
-CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O3 -fno-strict-aliasing # gykim spatial
+MPX_FLAGS=-Wall -pedantic -O3 -D__SOFTBOUNDMPX_SPATIAL -g
+CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O3 -fno-strict-aliasing -g # gykim spatial
 ARFLAGS=-rcs
 
 # If LLVM_GOLD is set, also build a library for use with LTO
