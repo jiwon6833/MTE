@@ -225,8 +225,8 @@ unsafe_byval_opt
 char SoftBoundCETSPass:: ID = 0;
 
 //diwony
-static RegisterPass<SoftBoundCETSPass> P ("SoftBoundCETSPass",
-                                          "SoftBound Pass for Spatial Safety");
+//static RegisterPass<SoftBoundCETSPass> P ("SoftBoundCETSPass",
+//                                          "SoftBound Pass for Spatial Safety");
 
 //
 // Method: getAssociateFuncLock()
@@ -407,11 +407,11 @@ void SoftBoundCETSPass::initializeSoftBoundVariables(Module& module) {
     }
   }
 
-  m_metadata_load_vector_func = module.getFunction("__softboundcets_metadata_load_vector");
-  assert(m_metadata_load_vector_func && "__softboundcets_metadata_load_vector null?");
+  // m_metadata_load_vector_func = module.getFunction("__softboundcets_metadata_load_vector");
+  // assert(m_metadata_load_vector_func && "__softboundcets_metadata_load_vector null?");
 
-  m_metadata_store_vector_func = module.getFunction("__softboundcets_metadata_store_vector");
-  assert(m_metadata_store_vector_func && "__softboundcets_metadata_store_vector null?");
+  // m_metadata_store_vector_func = module.getFunction("__softboundcets_metadata_store_vector");
+  // assert(m_metadata_store_vector_func && "__softboundcets_metadata_store_vector null?");
   
   m_load_base_bound_func = module.getFunction("__softboundcets_metadata_load");
   assert(m_load_base_bound_func && "__softboundcets_metadata_load null?");
