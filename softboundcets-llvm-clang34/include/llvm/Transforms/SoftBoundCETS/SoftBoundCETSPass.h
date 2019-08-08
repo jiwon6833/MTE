@@ -287,6 +287,9 @@ class SoftBoundCETSPass: public ModulePass {
   void handleAlloca(AllocaInst*, Value*, Value*, 
                     Value*, BasicBlock*,  
                     BasicBlock::iterator&);  
+  //diwony
+  void handleInvoke(InvokeInst*);
+  
   
   void insertMetadataLoad(LoadInst*);
   void handleLoad(LoadInst*);
@@ -427,6 +430,12 @@ class SoftBoundCETSPass: public ModulePass {
   
   
   /* Other helper functions */
+
+  //diwony
+  void introduceShadowStackAllocation(InvokeInst*);
+  void introduceShadowStackDeallocation(InvokeInst*, Instruction*);
+  int getNumPointerArgsAndReturn(InvokeInst*);
+  void iterateCallSiteIntroduceShadowStackStores(InvokeInst*);
   
   Value* introduceGEPWithLoad(Value*, int, Instruction*);
   Value* storeShadowStackBaseForFunctionArgs(Instruction*, int);

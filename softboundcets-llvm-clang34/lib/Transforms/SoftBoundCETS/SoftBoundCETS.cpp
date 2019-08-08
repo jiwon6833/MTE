@@ -224,6 +224,10 @@ unsafe_byval_opt
 #define DEBUG_TYPE LV_NAME
 char SoftBoundCETSPass:: ID = 0;
 
+//diwony
+static RegisterPass<SoftBoundCETSPass> P ("SoftBoundCETSPass",
+                                          "SoftBound Pass for Spatial Safety");
+
 //
 // Method: getAssociateFuncLock()
 //
@@ -1589,6 +1593,22 @@ SoftBoundCETSPass::getGlobalVariableBaseBound(Value* operand,
 // of space based on the input passed to it(number of pointer
 // arguments/return).
 
+//diwony
+void SoftBoundCETSPass:: introduceShadowStackAllocation(InvokeInst* call_inst){
+
+  // Count the number of pointer arguments and whether a pointer return
+  int pointer_args_return = getNumPointerArgsAndReturn(call_inst);
+  if(pointer_args_return == 0)
+    return;
+  Value* total_ptr_args;
+    total_ptr_args =
+      ConstantInt::get(Type::getInt32Ty(call_inst->getType()->getContext()),
+                       pointer_args_return, false);
+
+    SmallVector<Value*, 8> args;
+    args.push_back(total_ptr_args);
+    CallInst::Create(m_shadow_stack_allocate, args, "", call_inst);
+}
 
 void SoftBoundCETSPass:: introduceShadowStackAllocation(CallInst* call_inst){
     
@@ -1668,6 +1688,18 @@ SoftBoundCETSPass::introduceShadowStackStores(Value* ptr_value,
 // Description: This function inserts a call to the C-handler that
 // deallocates the shadow stack space on function exit.
   
+//diwony
+//diwony
+void
+SoftBoundCETSPass:: introduceShadowStackDeallocation(InvokeInst* call_inst,
+                                                     Instruction* insert_at){
+
+  int pointer_args_return = getNumPointerArgsAndReturn(call_inst);
+  if(pointer_args_return == 0)
+    return;
+  SmallVector<Value*, 8> args;
+  CallInst::Create(m_shadow_stack_deallocate, args, "", insert_at);
+}
 
 void 
 SoftBoundCETSPass:: introduceShadowStackDeallocation(CallInst* call_inst, 
@@ -1685,6 +1717,36 @@ SoftBoundCETSPass:: introduceShadowStackDeallocation(CallInst* call_inst,
 //
 // Description: Returns the number of pointer arguments and return.
 //
+
+//diwony
+int SoftBoundCETSPass:: getNumPointerArgsAndReturn(InvokeInst* call_inst){
+
+  int total_pointer_count = 0;
+  CallSite cs(call_inst);
+  for(unsigned i = 0; i < cs.arg_size(); i++){
+    Value* arg_value = cs.getArgument(i);
+    if(isa<PointerType>(arg_value->getType())){
+      total_pointer_count++;
+    }
+  }
+
+  if (total_pointer_count != 0) {
+    // Reserve one for the return address if it has atleast one
+    // pointer argument
+    total_pointer_count++;
+  } else{
+    // Increment the pointer arg return if the call instruction
+    // returns a pointer
+    if(isa<PointerType>(call_inst->getType())){
+      total_pointer_count++;
+    }
+  }
+  return total_pointer_count;
+}
+
+
+
+
 int SoftBoundCETSPass:: getNumPointerArgsAndReturn(CallInst* call_inst){
 
   int total_pointer_count = 0;
@@ -2288,6 +2350,13 @@ void SoftBoundCETSPass::getConstantExprBaseBound(Constant* given_constant,
   if(isa<ConstantPointerNull>(given_constant)){
     tmp_base = m_void_null_ptr;
     tmp_bound = m_void_null_ptr;
+    return;
+  }
+
+  //TODO diwony
+  if(isa<UndefValue>(given_constant)){
+    tmp_base = m_void_null_ptr;
+    tmp_bound = m_infinite_bound_ptr;
     return;
   }
   
@@ -4074,6 +4143,28 @@ void SoftBoundCETSPass::handleMemcpy(CallInst* call_inst){
     
 }
 
+//diwony
+void
+SoftBoundCETSPass:: iterateCallSiteIntroduceShadowStackStores(InvokeInst* call_inst){
+
+  int pointer_args_return = getNumPointerArgsAndReturn(call_inst);
+
+  if(pointer_args_return == 0)
+    return;
+
+  int pointer_arg_no = 1;
+
+  CallSite cs(call_inst);
+  for(unsigned i = 0; i < cs.arg_size(); i++){
+    Value* arg_value = cs.getArgument(i);
+    if(isa<PointerType>(arg_value->getType())){
+      introduceShadowStackStores(arg_value, call_inst, pointer_arg_no);
+      pointer_arg_no++;
+    }
+  }
+}
+
+
 void 
 SoftBoundCETSPass:: iterateCallSiteIntroduceShadowStackStores(CallInst* call_inst){
     
@@ -4134,9 +4225,10 @@ void SoftBoundCETSPass::handleExtractElement(ExtractElementInst* EEI){
 
 void SoftBoundCETSPass::handleExtractValue(ExtractValueInst* EVI){
 
-  if(isa<PointerType>(EVI->getType())){
-    assert(0 && "ExtractValue is returning a pointer, possibly some vectorization going on, not handled, try running with O0 or O1 or O2");
-  }
+  //jwseo TODO
+  // if(isa<PointerType>(EVI->getType())){
+  //   assert(0 && "ExtractValue is returning a pointer, possibly some vectorization going on, not handled, try running with O0 or O1 or O2");
+  // }
   
   if(spatial_safety){
     associateBaseBound(EVI, m_void_null_ptr, m_infinite_bound_ptr);
@@ -4208,6 +4300,43 @@ void SoftBoundCETSPass::handleCall(CallInst* call_inst) {
   }
   introduceShadowStackDeallocation(call_inst,insert_at);
 }
+
+//diwony
+void SoftBoundCETSPass::handleInvoke(InvokeInst* call_inst) {
+
+  // Function* func = call_inst->getCalledFunction();
+  Value* mcall = call_inst;
+
+  Function* func = call_inst->getCalledFunction();
+  if(func && isFuncDefSoftBound(func->getName())){
+
+    if(!isa<PointerType>(call_inst->getType())){
+      return;
+    }
+
+    if(spatial_safety){
+      associateBaseBound(call_inst, m_void_null_ptr, m_void_null_ptr);
+    }
+    if(temporal_safety){
+      associateKeyLock(call_inst, m_constantint64ty_zero, m_void_null_ptr);
+    }
+    return;
+  }
+
+  Instruction* insert_at = getNextInstruction(call_inst);
+  //  call_inst->setCallingConv(CallingConv::C);
+
+  introduceShadowStackAllocation(call_inst);
+  iterateCallSiteIntroduceShadowStackStores(call_inst);
+
+  if(isa<PointerType>(mcall->getType())) {
+
+    /* ShadowStack for the return value is 0 */
+    introduceShadowStackLoads(call_inst, insert_at, 0);
+  }
+  introduceShadowStackDeallocation(call_inst,insert_at);
+}
+
 
 void SoftBoundCETSPass::handleIntToPtr(IntToPtrInst* inttoptrinst) {
     
@@ -4597,6 +4726,13 @@ void SoftBoundCETSPass::gatherBaseBoundPass1 (Function * func) {
           CallInst* call_inst = dyn_cast<CallInst>(v1);
           assert(call_inst && "Not a Call inst?");
           handleCall(call_inst);
+        }
+        break;
+      case Instruction::Invoke:
+        {
+          InvokeInst * EVI = dyn_cast<InvokeInst>(v1);
+          assert(EVI && "Invoke  inst?");
+          handleInvoke(EVI);
         }
         break;
 

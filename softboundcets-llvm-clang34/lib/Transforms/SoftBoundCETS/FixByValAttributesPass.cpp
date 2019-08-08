@@ -238,9 +238,12 @@ bool FixByValAttributesPass:: transformFunction(Function* func){
         assert(0 && "Byval attribute and indirect call?");
       }
 
-      CallInst* call_inst = dyn_cast<CallInst>(call);
-      assert(call_inst && "call inst null?");
+      //diwony
+      //CallInst* call_inst = dyn_cast<CallInst>(call);
+      //assert(call_inst && "call inst null?");
 
+      //diwony
+      assert((isa<CallInst>(call)||isa<InvokeInst>(call))&& "call inst null?");
       SmallVector<Value*, 16> call_args;
       CallSite::arg_iterator arg_i = cs.arg_begin();
 
@@ -282,8 +285,15 @@ bool FixByValAttributesPass:: transformFunction(Function* func){
         }      
       }
 
-      CallInst* result_call = CallInst::Create(new_func,
-                                               call_args, "", call);
+      //diwony
+      Instruction* result_call;
+      if((isa<CallInst>(call)))
+        result_call=CallInst::Create(new_func,call_args, "", call);
+      else
+        result_call=InvokeInst::Create(new_func,cast<InvokeInst>(call)->getNormalDest(),cast<InvokeInst>(call)->getUnwindDest(),call_args, "", call);
+      
+      //CallInst* result_call = CallInst::Create(new_func,
+      //                                         call_args, "", call);
       call->replaceAllUsesWith(result_call);
       call->eraseFromParent();
       change_call = true;
