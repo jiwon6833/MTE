@@ -111,7 +111,7 @@ extern size_t* __softboundcets_global_lock;
 
 extern void __softboundcets_process_memory_total();
 
-
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 __WEAK_INLINE void 
 __softboundcets_read_shadow_stack_metadata_store(char** endptr, int arg_num){
@@ -1513,8 +1513,10 @@ softboundcets_strncpy(char* dest, char* src, size_t n){
   if(dest < dest_base || (dest > dest_bound - n) || (n > (size_t) dest_bound)){
     printf("[strncpy] overflow in strncpy with dest\n");
     __softboundcets_abort();
-  }  
-  if(src < src_base || (src > src_bound -n) || (n > (size_t) src_bound)){
+  }
+  if(src < src_base || src + MIN(strlen(src),n) > src_bound || (n > (size_t) src_bound)){
+
+    //if(src < src_base || (src > src_bound -n) || (n > (size_t) src_bound)){
     __softboundcets_abort();
   }
 #endif
@@ -1533,8 +1535,8 @@ softboundcets_strncpy(char* dest, char* src, size_t n){
   if(dest < dest_base || dest + n > dest_bound){
     printf("[strncpy] overflow in strncpy with dest\n");
     __softboundcets_abort();
-  }  
-  if(src < src_base || src + n > src_bound){
+  }
+  if(src < src_base || (src > src_bound -n) || (n > (size_t) src_bound)){
     //    printf("[strncpy] overflow in strncpy with src, src=%zx, src_base=%zx, src_bound=%zx\n", src, src_base, src_bound);
     __softboundcets_abort();
   }

@@ -50,6 +50,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include "/home/jwseo/workspace/MTE/midfat-orig/autosetup.dir/packages/src/llvm/include/llvm/mte/metapagetable_core.h"
+const static int pageSize = 4096;
+
 
 // gykim sptial
 /* #if 0 */
@@ -223,8 +226,9 @@ __WEAK_INLINE void __softboundcets_allocation_secondary_trie_allocate(void* addr
 __WEAK_INLINE void __softboundcets_add_to_free_map(size_t ptr_key, void* ptr) ;
 
 /******************************************************************************/
+#if 0
+static __attribute__ ((__constructor__)) void __softboundcets_global_init()
 
-static __attribute__ ((__constructor__)) void __softboundcets_global_init();
 
 extern __NO_INLINE void __softboundcets_stub(void);
 
@@ -235,7 +239,7 @@ void __softboundcets_global_init()
   __softboundcets_init();
   __softboundcets_stub();
 }
-
+#endif
 
 /* Layout of the shadow stack
 
@@ -902,17 +906,36 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #endif
 
   size_t ptr = (size_t) addr_of_ptr;
+  if (addr_of_ptr==NULL)
+    return;
   __softboundcets_trie_entry_t* trie_secondary_table;
-  //    __softboundcets_trie_entry_t** trie_primary_table = __softboundcets_trie_primary_table;
-    
-  //assert(__softboundcetswithss_trie_primary_table[primary_index] == trie_secondary_table);
 
+  unsigned long ptrInt = (unsigned long)ptr;
+  unsigned long pageIndex = (unsigned long)ptrInt / pageSize;
+  unsigned long pageEntry = pageTable[pageIndex];
+  unsigned long *metaBase = (unsigned long*)(pageEntry >> 8);
+  unsigned long alignment = pageEntry & 0xFF;
+  int tmp_size=1;
+  char *alloc_base = (char*)(metaBase[2 * ((ptrInt & (pageSize - 1)) >> alignment)]);
+
+  if(alloc_base == NULL)
+    return;
+  unsigned long *typeInfo = (unsigned long*)(metaBase[2 * ((ptrInt & (pageSize - 1)) >> alignment) + 1]);
+
+
+  *((void**) base) = (size_t)alloc_base;
+  *((void**) bound) = (size_t)typeInfo;
+
+  //    __softboundcets_trie_entry_t** trie_primary_table = __softboundcets_trie_primary_table;
+
+  //assert(__softboundcetswithss_trie_primary_table[primary_index] == trie_secondary_table);
+  /*
   size_t primary_index = ( ptr >> 25);
   trie_secondary_table = __softboundcets_trie_primary_table[primary_index];
 
 
-  if(!__SOFTBOUNDCETS_PREALLOCATE_TRIE) {      
-    if(trie_secondary_table == NULL) {  
+  if(!__SOFTBOUNDCETS_PREALLOCATE_TRIE) {
+    if(trie_secondary_table == NULL) {
 
 #ifdef __SOFTBOUNDCETS_SPATIAL
       *((void**) base) = 0;
@@ -936,10 +959,10 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #endif 
       return;
     }
-  } /* PREALLOCATE_ENDS */
+    }*/ /* PREALLOCATE_ENDS */
 
     /* MAIN SOFTBOUNDCETS LOAD WHICH RUNS ON THE NORMAL MACHINE */
-  size_t secondary_index = ((ptr >> 3) & 0x3fffff);
+  /* size_t secondary_index = ((ptr >> 3) & 0x3fffff);
   __softboundcets_trie_entry_t* entry_ptr = &trie_secondary_table[secondary_index];
     
 #ifdef __SOFTBOUNDCETS_SPATIAL
@@ -964,7 +987,7 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
   *((size_t*) key) = entry_ptr->key;
   *((void**) lock) = (void*) entry_ptr->lock;
 
-#endif      
+  #endif */     
   return;
 }
 /******************************************************************************/

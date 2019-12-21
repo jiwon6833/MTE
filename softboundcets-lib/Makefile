@@ -1,7 +1,7 @@
 all: softboundcets_rt softboundmpx_rt
 
-MPX_FLAGS=-Wall -pedantic -O3 -D__SOFTBOUNDMPX_SPATIAL -g
-CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O3 -fno-strict-aliasing -g # gykim spatial
+MPX_FLAGS=-Wall -pedantic -O0 -D__SOFTBOUNDMPX_SPATIAL -g
+CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O0 -fno-strict-aliasing -g # gykim spatial
 ARFLAGS=-rcs
 
 # If LLVM_GOLD is set, also build a library for use with LTO
@@ -27,11 +27,14 @@ softboundcets_rt: softboundcets.h softboundcets-checks.c softboundcets.c softbou
 	ar $(ARFLAGS) libsoftboundcets_rt.a softboundcets.o softboundcets-checks.o softboundcets-wrappers.o
 
 softboundcets_rt_lto: softboundcets.h softboundcets-checks.c softboundcets.c softboundcets-wrappers.c 
-	mkdir lto
+	mkdir -p lto
+	mkdir -p lto_main
 	clang $(CFLAGS) -flto -c softboundcets-checks.c -o lto/softboundcets-checks.lto.o
-	clang $(CFLAGS) -flto -c softboundcets.c -o lto/softboundcets.lto.o
-	clang $(CFLAGS) -flto -c softboundcets-wrappers.c -o lto/softboundcets-wrappers.lto.o
-	ar --plugin=$(LLVM_GOLD) $(ARFLAGS) lto/libsoftboundcets_rt.a lto/softboundcets.lto.o lto/softboundcets-checks.lto.o lto/softboundcets-wrappers.lto.o
+	clang $(CFLAGS) -c softboundcets.c -o lto_main/softboundcets.o
+	clang $(CFLAGS) -c softboundcets-wrappers.c -o lto_main/softboundcets-wrappers.o
+	llvm-ar rcs lto_main/libsoftboundcets_rt.a lto_main/softboundcets.o lto_main/softboundcets-wrappers.o
+	llvm-ranlib lto_main/libsoftboundcets_rt.a
+
 
 
 softboundmpx_rt_lto: softboundmpx.h softboundmpx-checks.c softboundmpx.c softboundmpx-wrappers.c

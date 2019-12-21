@@ -286,12 +286,14 @@ int main(int argc, char **argv){
 
   /* &new_argv[0], temp_ptr, argv_key, argv_loc * the metadata */
 
-  __softboundcets_allocate_shadow_stack_space(2);
+  __softboundcets_allocate_shadow_stack_space(4);
 
 #ifdef __SOFTBOUNDCETS_SPATIAL
 
   __softboundcets_store_base_shadow_stack(&new_argv[0], 1);
   __softboundcets_store_bound_shadow_stack(temp_ptr, 1);
+  __softboundcets_store_base_shadow_stack(0, 2);
+  __softboundcets_store_bound_shadow_stack(0xfffffffffffffff0, 2);
 
 #elif __SOFTBOUNDCETS_TEMPORAL
 
