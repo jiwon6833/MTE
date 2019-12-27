@@ -208,6 +208,13 @@ static void softboundcets_init_ctype(){
 #endif // __linux ends 
 }
 
+volatile int tag_dummy;
+void mte_color_tag(char *base, char *bound) {
+  /* if (bound - base > 0x100000) */
+  /*   abort(); */
+  for (char *cur = base; cur <= bound; cur+=16)
+    tag_dummy=1;
+}
 
 void __softboundcets_printf(const char* str, ...)
 {
@@ -219,6 +226,11 @@ void __softboundcets_printf(const char* str, ...)
 }
 
 extern int softboundcets_pseudo_main(int argc, char **argv);
+
+int load_deref_cnt = 0;
+void atexit_hook() {
+  fprintf(stderr, "load_deref_cnt = %d\n", load_deref_cnt);
+}
 
 int main(int argc, char **argv){
 
@@ -323,6 +335,7 @@ int main(int argc, char **argv){
 
   __softboundcets_stack_memory_deallocation(argv_key);
 
+  atexit(atexit_hook);
   return return_value;
 }
 

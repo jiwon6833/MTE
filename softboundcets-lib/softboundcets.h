@@ -536,10 +536,12 @@ __softboundcets_spatial_call_dereference_check(void* base, void* bound,
 }
 
 extern void* malloc_address;
+extern int load_deref_cnt;
 __WEAK_INLINE void 
 __softboundcets_spatial_load_dereference_check(void *base, void *bound, 
                                                void *ptr, size_t size_of_type)
 {
+  load_deref_cnt++;
 
   if ((ptr < base) || ((void*)((char*) ptr + size_of_type) > bound)) {
 
