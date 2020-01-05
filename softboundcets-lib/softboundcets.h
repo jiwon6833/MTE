@@ -908,8 +908,13 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #endif
 
   size_t ptr = (size_t) addr_of_ptr;
-  if (addr_of_ptr==NULL)
+  
+  if (addr_of_ptr<0x1000 || addr_of_ptr>=0x1000000000000){
+  *((void**) base) = 0;
+  *((void**) bound) = 0;
+
     return;
+  }
   __softboundcets_trie_entry_t* trie_secondary_table;
 
   unsigned long ptrInt = (unsigned long)ptr;
