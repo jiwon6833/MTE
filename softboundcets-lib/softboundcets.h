@@ -921,6 +921,12 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
   unsigned long pageIndex = (unsigned long)ptrInt / pageSize;
   unsigned long pageEntry = pageTable[pageIndex];
   unsigned long *metaBase = (unsigned long*)(pageEntry >> 8);
+  if(!metaBase){
+    *((void**) base) = 0;
+    *((void**) bound) = 0;
+
+    return;
+  }
   unsigned long alignment = pageEntry & 0xFF;
   int tmp_size=1;
   char *alloc_base = (char*)(metaBase[2 * ((ptrInt & (pageSize - 1)) >> alignment)]);
