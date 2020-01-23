@@ -50,7 +50,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
-#include "/home/jwseo/workspace/MTE/midfat-orig/autosetup.dir/packages/src/llvm/include/llvm/mte/metapagetable_core.h"
+#include "/home/jsshin/projects/mte/midfat_riscv/autosetup.dir/packages/src/llvm/include/llvm/mte/metapagetable_core.h"
 const static int pageSize = 4096;
 
 
@@ -240,6 +240,77 @@ void __softboundcets_global_init()
   __softboundcets_stub();
 }
 #endif
+
+#define NUM_MTE_TAGS 16
+#define TAG_INFO_STACK_DEPTH 256000
+
+struct tag_info_struct {
+  char * base;
+  char * bound;
+  /* int used; */
+  void * sp;
+};
+
+struct tag_info_stack_struct {
+  char * base;
+  char * bound;
+  /* int used; */
+  void * orig_sp;
+  void * sp;
+  int orig_tag;
+};
+
+extern struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
+extern struct tag_info_struct tag_info[NUM_MTE_TAGS];
+extern char* __mte_tag_mem;
+extern unsigned long cur_lru;
+extern int tag_info_stack_ptr;
+extern int mte_color_count;
+extern int mte_inc_lru_count;
+
+long mte_color_tag_main(char *base, char *bound, void * cur_sp);
+void mte_restore_tag_main(void * cur_sp);
+
+__WEAK_INLINE void mte_inc_lru() {
+  cur_lru++;
+  /* mte_inc_lru_count++; */
+}
+
+__WEAK_INLINE long mte_color_tag(char* base, char *bound) {
+  /* mte_color_count++; */
+  if (base==NULL)
+    return 0;
+
+  char * start = __mte_tag_mem + ((long)base >> 4);
+  if (*start) {
+    /* tag_info[*start].used++; */
+    /* tag_info[*start].lru = cur_sp; */
+    return *start;
+  }
+
+  void * cur_sp;
+  asm volatile ("mov %%rsp, %0\n\t"
+                : "=r" (cur_sp)
+                );
+  return mte_color_tag_main(base, bound, cur_sp);
+}
+#if 0
+__WEAK_INLINE void mte_uncolor_tag() {
+  cur_lru--;
+}
+#endif
+
+__WEAK_INLINE void mte_restore_tag() {
+  /* cur_lru--; */
+
+  void * cur_sp;
+  asm volatile ("mov %%rsp, %0\n\t"
+                : "=r" (cur_sp)
+                );
+  int tmp_stack_ptr = tag_info_stack_ptr-1;
+  if (tag_info_stack[tmp_stack_ptr].sp <= cur_sp)
+    mte_restore_tag_main(cur_sp);
+}
 
 /* Layout of the shadow stack
 
@@ -536,12 +607,21 @@ __softboundcets_spatial_call_dereference_check(void* base, void* bound,
 }
 
 extern void* malloc_address;
-extern int load_deref_cnt;
+extern long load_deref_cnt;
+extern long store_deref_cnt;
+extern char* __mte_tag_mem;
+extern int bc_count[16];
+
+void incAccessCount(void * base);
+
 __WEAK_INLINE void 
 __softboundcets_spatial_load_dereference_check(void *base, void *bound, 
                                                void *ptr, size_t size_of_type)
 {
-  load_deref_cnt++;
+  //  incAccessCount(base);
+  /* load_deref_cnt++; */
+  /* char *tag_base = __mte_tag_mem + ((long)base >> 4); */
+  /* bc_count[*tag_base]++; */
 
   if ((ptr < base) || ((void*)((char*) ptr + size_of_type) > bound)) {
 
@@ -558,7 +638,11 @@ __softboundcets_spatial_store_dereference_check(void *base,
                                                 void *ptr, 
                                                 size_t size_of_type)
 {
-  
+  //incAccessCount(base);
+  /* store_deref_cnt++; */
+  /* char *tag_base = __mte_tag_mem + ((long)base >> 4); */
+  /* bc_count[*tag_base]++; */
+
   if ((ptr < base) || ((void*)((char*)ptr + size_of_type) > bound)) {
     __softboundcets_printf("In Store Dereference Check, base=%p, bound=%p, ptr=%p, size_of_type=%zx, ptr+size=%p\n",
                               base, bound, ptr, size_of_type, (char*)ptr+size_of_type); 
