@@ -119,7 +119,7 @@ void __softboundcets_init(void)
   assert(sizeof(__softboundcets_trie_entry_t) >= 16);
 
   /* Allocating the temporal shadow space */
-
+#ifndef METALLOC
   size_t temporal_table_length = (__SOFTBOUNDCETS_N_TEMPORAL_ENTRIES)* sizeof(void*);
 
   __softboundcets_lock_new_location = mmap(0, temporal_table_length, 
@@ -144,7 +144,7 @@ void __softboundcets_init(void)
   assert(__softboundcets_global_lock != (void*) -1);
   //  __softboundcets_global_lock =  __softboundcets_lock_new_location++;
   *((size_t*)__softboundcets_global_lock) = 1;
-
+  #endif
 
 
   size_t shadow_stack_size = __SOFTBOUNDCETS_SHADOW_STACK_ENTRIES * sizeof(size_t);
@@ -157,7 +157,7 @@ void __softboundcets_init(void)
   size_t * current_size_shadow_stack_ptr =  __softboundcets_shadow_stack_ptr +1 ;
   *(current_size_shadow_stack_ptr) = 0;
 
-
+  #ifndef METALLOC
   if(__SOFTBOUNDCETS_FREE_MAP) {
     size_t length_free_map = (__SOFTBOUNDCETS_N_FREE_MAP_ENTRIES) * sizeof(size_t);
     __softboundcets_free_map_table = mmap(0, length_free_map, 
@@ -176,7 +176,7 @@ void __softboundcets_init(void)
   
   int* temp = malloc(1);
   __softboundcets_allocation_secondary_trie_allocate_range(0, (size_t)temp);
-
+  #endif
   __mte_tag_mem = sys_mmap(0, 0x0000100000000000 /* 8TB */, PROT_READ | PROT_WRITE, SOFTBOUNDCETS_MMAP_FLAGS, -1, 0);
 }
 
@@ -429,7 +429,7 @@ int main(int argc, char **argv){
 #if defined(__linux__)
   mallopt(M_MMAP_MAX, 0);
 #endif
-
+#ifndef METALLOC
   for(i = 0; i < argc; i++) { 
 
 #ifdef __SOFTBOUNDCETS_SPATIAL
@@ -464,7 +464,7 @@ int main(int argc, char **argv){
 
   //  printf("before init_ctype\n");
   softboundcets_init_ctype();
-
+#endif
   /* Santosh: Real Nasty hack because C programmers assume argv[argc]
    * to be NULL. Also this NUll is a pointer, doing + 1 will make the
    * size_of_type to fail
@@ -507,9 +507,9 @@ int main(int argc, char **argv){
   //  printf("before calling program main\n");
   return_value = softboundcets_pseudo_main(argc, new_argv);
   __softboundcets_deallocate_shadow_stack_space();
-
+#ifndef METALLOC
   __softboundcets_stack_memory_deallocation(argv_key);
-
+#endif
   atexit(atexit_hook);
   return return_value;
 }
