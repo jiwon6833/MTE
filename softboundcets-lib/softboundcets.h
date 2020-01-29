@@ -993,6 +993,7 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #endif
 
   size_t ptr = (size_t) addr_of_ptr;
+#ifdef METALLOC
   
   if (addr_of_ptr<0x1000 || addr_of_ptr>=0x1000000000000){
   *((void**) base) = 0;
@@ -1000,7 +1001,6 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 
     return;
   }
-  __softboundcets_trie_entry_t* trie_secondary_table;
 
   unsigned long ptrInt = (unsigned long)ptr;
   unsigned long pageIndex = (unsigned long)ptrInt / pageSize;
@@ -1023,11 +1023,13 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 
   *((void**) base) = (size_t)alloc_base;
   *((void**) bound) = (size_t)typeInfo;
+#else // NOT METALLOC
 
   //    __softboundcets_trie_entry_t** trie_primary_table = __softboundcets_trie_primary_table;
 
   //assert(__softboundcetswithss_trie_primary_table[primary_index] == trie_secondary_table);
-  /*
+  __softboundcets_trie_entry_t* trie_secondary_table;
+  
   size_t primary_index = ( ptr >> 25);
   trie_secondary_table = __softboundcets_trie_primary_table[primary_index];
 
@@ -1057,10 +1059,10 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #endif 
       return;
     }
-    }*/ /* PREALLOCATE_ENDS */
+    } /* PREALLOCATE_ENDS */
 
     /* MAIN SOFTBOUNDCETS LOAD WHICH RUNS ON THE NORMAL MACHINE */
-  /* size_t secondary_index = ((ptr >> 3) & 0x3fffff);
+  size_t secondary_index = ((ptr >> 3) & 0x3fffff);
   __softboundcets_trie_entry_t* entry_ptr = &trie_secondary_table[secondary_index];
     
 #ifdef __SOFTBOUNDCETS_SPATIAL
@@ -1085,8 +1087,9 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
   *((size_t*) key) = entry_ptr->key;
   *((void**) lock) = (void*) entry_ptr->lock;
 
-  #endif */     
+#endif
   return;
+#endif
 }
 /******************************************************************************/
 
