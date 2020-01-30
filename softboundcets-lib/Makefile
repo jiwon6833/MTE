@@ -1,7 +1,7 @@
 all: softboundcets_rt softboundmpx_rt
 
 MPX_FLAGS=-Wall -pedantic -O0 -D__SOFTBOUNDMPX_SPATIAL -g
-CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O0 -fno-strict-aliasing -g # gykim spatial
+CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O2 -fno-strict-aliasing -g # gykim spatial
 RISCV_CFLAGS=-target riscv64-unknown-linux-gnu -Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O0 -fno-strict-aliasing -g -mriscv=RV64IMAFD -nostdinc -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/lib/gcc/riscv-linux/4.6.1/include -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/lib/gcc/riscv-linux/4.6.1/include-fixed -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/riscv-linux/include -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/sysroot/usr/include
 ARFLAGS=-rcs
 

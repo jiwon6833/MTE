@@ -996,9 +996,8 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
 #ifdef METALLOC
   
   if (addr_of_ptr<0x1000 || addr_of_ptr>=0x1000000000000){
-  *((void**) base) = 0;
-  *((void**) bound) = 0;
-
+    *((void**) base) = 0;
+    *((void**) bound) = 0;
     return;
   }
 
@@ -1009,20 +1008,16 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
   if(!metaBase){
     *((void**) base) = 0;
     *((void**) bound) = 0;
-
     return;
   }
   unsigned long alignment = pageEntry & 0xFF;
   int tmp_size=1;
   char *alloc_base = (char*)(metaBase[2 * ((ptrInt & (pageSize - 1)) >> alignment)]);
-
-  if(alloc_base == NULL)
-    return;
   unsigned long *typeInfo = (unsigned long*)(metaBase[2 * ((ptrInt & (pageSize - 1)) >> alignment) + 1]);
-
 
   *((void**) base) = (size_t)alloc_base;
   *((void**) bound) = (size_t)typeInfo;
+
 #else // NOT METALLOC
 
   //    __softboundcets_trie_entry_t** trie_primary_table = __softboundcets_trie_primary_table;
@@ -1033,7 +1028,7 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
   size_t primary_index = ( ptr >> 25);
   trie_secondary_table = __softboundcets_trie_primary_table[primary_index];
 
-
+#if 0 // jsshin
   if(!__SOFTBOUNDCETS_PREALLOCATE_TRIE) {
     if(trie_secondary_table == NULL) {
 
@@ -1060,7 +1055,7 @@ __METADATA_INLINE void __softboundcets_metadata_load(void* addr_of_ptr, void** b
       return;
     }
     } /* PREALLOCATE_ENDS */
-
+#endif
     /* MAIN SOFTBOUNDCETS LOAD WHICH RUNS ON THE NORMAL MACHINE */
   size_t secondary_index = ((ptr >> 3) & 0x3fffff);
   __softboundcets_trie_entry_t* entry_ptr = &trie_secondary_table[secondary_index];
