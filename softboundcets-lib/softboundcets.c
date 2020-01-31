@@ -212,6 +212,7 @@ static void softboundcets_init_ctype(){
 #endif // __linux ends 
 }
 
+#if 0
 struct tag_info_struct tag_info[NUM_MTE_TAGS] = {
   { 0, 0, 0 }, /* tag 0 unused */
   { 0, 0, 0xFFFFFFFFFFFFFFFF },
@@ -230,12 +231,35 @@ struct tag_info_struct tag_info[NUM_MTE_TAGS] = {
   { 0, 0, 0xFFFFFFFFFFFFFFFF },
   { 0, 0, 0xFFFFFFFFFFFFFFFF }
 };
+#endif
 
-struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
+struct tag_info_struct tag_info[NUM_MTE_TAGS] = {
+  { 0, 0, 0 }, /* tag 0 unused */
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 0, 0 }
+};
+
+//struct tag_info_struct tag_info[NUM_MTE_TAGS];
+struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH] = {
+  {0, 0, 0xFFFFFFFFFFFFFFFF, 0, 0}  // special value for the first entry
+};
 
 /* int stack_depth = 0; */
 unsigned long cur_lru = 0;
-int tag_info_stack_ptr = 0;
+int tag_info_stack_ptr = 1;
 
 // TODO: store tag_base/bound instead of base/bound?
 
@@ -253,15 +277,6 @@ long mte_color_tag_main(char *base, char *bound, void * cur_sp) {
 
   /* while (tag_info[i].used && i < NUM_MTE_TAGS) */
   /*   i++; */
-    unsigned long max_sp = 0, max_sp_pos = 0;
-    for (int j = 1; j < 16; j++) {
-      if (tag_info[j].sp > max_sp) {
-        max_sp = tag_info[j].sp;
-        max_sp_pos = j;
-      }
-    }
-
-#if 0
   /* if (i==NUM_MTE_TAGS) { */
     unsigned long min_lru = ULONG_MAX, min_lru_pos = 0;
     for (int i = 1; i < 16; i++) {
@@ -270,23 +285,18 @@ long mte_color_tag_main(char *base, char *bound, void * cur_sp) {
         min_lru_pos = i;
       }
     }
-#endif
 
-    if (tag_info[max_sp_pos].base) {
-      char *old_base = tag_info[max_sp_pos].base;
-      char *old_bound = tag_info[max_sp_pos].bound;
-      /* printf("size: %ld, count: %d\n", old_bound-old_base, bc_count[max_sp_pos]); */
-      /* uncolor_score += (double)bc_count[max_sp_pos] / (double)(old_bound-old_base); */
+    if (tag_info[min_lru_pos].base) {
+      char *old_base = tag_info[min_lru_pos].base;
+      char *old_bound = tag_info[min_lru_pos].bound;
       uncolor_count++;
-      /* bc_count[max_sp_pos] = 0; */
-      /* printf("recolor tag: %d, lru: %ld\n", max_sp_pos, max_sp); */
 #if 1
       tag_info_stack[tag_info_stack_ptr].base = old_base;
       tag_info_stack[tag_info_stack_ptr].bound = old_bound;
-      /* tag_info_stack[tag_info_stack_ptr].used = tag_info[max_sp_pos].used; */
-      tag_info_stack[tag_info_stack_ptr].orig_sp = tag_info[max_sp_pos].sp;
+      /* tag_info_stack[tag_info_stack_ptr].used = tag_info[min_lru_pos].used; */
+      tag_info_stack[tag_info_stack_ptr].orig_lru = tag_info[min_lru_pos].lru;
       tag_info_stack[tag_info_stack_ptr].sp = cur_sp;
-      tag_info_stack[tag_info_stack_ptr].orig_tag = max_sp_pos;
+      tag_info_stack[tag_info_stack_ptr].orig_tag = min_lru_pos;
       tag_info_stack_ptr++;
       if (tag_info_stack_ptr > TAG_INFO_STACK_DEPTH)
         abort();
@@ -298,7 +308,7 @@ long mte_color_tag_main(char *base, char *bound, void * cur_sp) {
       /* *tag_start=0; // JSSHIN */
     }
 
-    int i = max_sp_pos;
+    int i = min_lru_pos;
     /* abort(); */
   /* } */
     color_count++;
@@ -309,7 +319,8 @@ long mte_color_tag_main(char *base, char *bound, void * cur_sp) {
   /* tag_info[i].used++; */
   tag_info[i].base = base;
   tag_info[i].bound = bound;
-  tag_info[i].sp = cur_sp;
+  /* tag_info[i].sp = cur_sp; */
+  tag_info[i].lru = cur_lru;
 
   return i;
 }
@@ -349,8 +360,8 @@ void mte_restore_tag_main(void * cur_sp) {
     tmp_lru = tag_info_stack[tmp_stack_ptr].lru;
   }
 #endif
-  while (tmp_stack_ptr >= 0
-         && tag_info_stack[tmp_stack_ptr].sp <= cur_sp) {
+  // tag_info_stack[0].sp has MAX value so don't need to check tmp_stack_ptr >= 0
+  while (tag_info_stack[tmp_stack_ptr].sp <= cur_sp) {
     int orig_tag = tag_info_stack[tmp_stack_ptr].orig_tag;
 
     char *base = tag_info[orig_tag].base;
@@ -375,7 +386,7 @@ void mte_restore_tag_main(void * cur_sp) {
 
     tag_info[orig_tag].base = old_base;
     tag_info[orig_tag].bound = old_bound;
-    tag_info[orig_tag].sp = tag_info_stack[tmp_stack_ptr].orig_sp;
+    tag_info[orig_tag].lru = tag_info_stack[tmp_stack_ptr].orig_lru;
 
     tmp_stack_ptr--;
     restore_count++;

@@ -249,16 +249,17 @@ struct tag_info_struct {
   char * base;
   char * bound;
   /* int used; */
-  void * sp;
+  /* void * sp; */
+  unsigned long lru;
 };
 
 struct tag_info_stack_struct {
   char * base;
   char * bound;
   /* int used; */
-  void * orig_sp;
   void * sp;
   int orig_tag;
+  void * orig_lru;
 };
 
 extern struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
@@ -285,7 +286,7 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound) {
   char * start = __mte_tag_mem + ((long)base >> 4);
   if (*start) {
     /* tag_info[*start].used++; */
-    /* tag_info[*start].lru = cur_sp; */
+    tag_info[*start].lru = cur_lru;
     return *start;
   }
 
