@@ -245,6 +245,12 @@ void __softboundcets_global_init()
 #define NUM_MTE_TAGS 16
 #define TAG_INFO_STACK_DEPTH 8192
 
+#ifdef MTE_DEBUG
+#define MTE_DEBUG(x) do { x; } while (0)
+#else
+#define MTE_DEBUG(x) do { ; } while (0)
+#endif
+
 struct tag_info_struct {
   char * base;
   char * bound;
@@ -267,22 +273,20 @@ extern struct tag_info_struct tag_info[NUM_MTE_TAGS];
 extern char* __mte_tag_mem;
 extern unsigned long cur_lru;
 extern int tag_info_stack_ptr;
-extern int mte_color_count;
-extern int mte_inc_lru_count;
+
+#ifdef MTE_DEBUG
+extern int mte_color_tag_count;
+extern int mte_restore_tag_count;
+#endif
 
 long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp);
 void mte_restore_tag_main(void * cur_sp);
 
-__WEAK_INLINE void mte_inc_lru() {
-  cur_lru++;
-  /* mte_inc_lru_count++; */
-}
-
 __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
-  /* mte_color_count++; */
   if (base==NULL)
     return 0;
 
+  MTE_DEBUG(mte_color_tag_count++);
   char * start = __mte_tag_mem + ((long)base >> 4);
   if (*start) {
     /* tag_info[*start].used++; */
@@ -304,6 +308,7 @@ __WEAK_INLINE void mte_uncolor_tag() {
 
 __WEAK_INLINE void mte_restore_tag() {
   /* cur_lru--; */
+  MTE_DEBUG(mte_restore_tag_count++);
 
   void * cur_sp;
   asm volatile ("mov %%rsp, %0\n\t"
@@ -608,22 +613,20 @@ __softboundcets_spatial_call_dereference_check(void* base, void* bound,
 
 }
 
-extern void* malloc_address;
+#ifdef MTE_DEBUG
 extern long load_deref_cnt;
 extern long store_deref_cnt;
-extern char* __mte_tag_mem;
-extern int bc_count[16];
-
 void incAccessCount(void * base);
+#endif
 
 __WEAK_INLINE void 
 __softboundcets_spatial_load_dereference_check(void *base, void *bound, 
                                                void *ptr, size_t size_of_type)
 {
-  //  incAccessCount(base);
-  /* load_deref_cnt++; */
-  /* char *tag_base = __mte_tag_mem + ((long)base >> 4); */
-  /* bc_count[*tag_base]++; */
+#ifdef MTE_DEBUG
+  incAccessCount(base);
+  load_deref_cnt++;
+#endif
 
   if ((ptr < base) || ((void*)((char*) ptr + size_of_type) > bound)) {
 
@@ -640,10 +643,10 @@ __softboundcets_spatial_store_dereference_check(void *base,
                                                 void *ptr, 
                                                 size_t size_of_type)
 {
-  //incAccessCount(base);
-  /* store_deref_cnt++; */
-  /* char *tag_base = __mte_tag_mem + ((long)base >> 4); */
-  /* bc_count[*tag_base]++; */
+#ifdef MTE_DEBUG
+  incAccessCount(base);
+  store_deref_cnt++;
+#endif
 
   if ((ptr < base) || ((void*)((char*)ptr + size_of_type) > bound)) {
     __softboundcets_printf("In Store Dereference Check, base=%p, bound=%p, ptr=%p, size_of_type=%zx, ptr+size=%p\n",

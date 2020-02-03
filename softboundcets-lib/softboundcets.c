@@ -205,22 +205,18 @@ struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH] = {
 unsigned long cur_lru = 0;
 int tag_info_stack_ptr = 1;
 
-// TODO: store tag_base/bound instead of base/bound?
-
-int bc_count[16] = {0};
 int color_count = 0;
 int uncolor_count = 0;
-double uncolor_score = 0.0;
 int restore_count = 0;
-int mte_color_count = 0;
-int mte_inc_lru_count = 0;
+int mte_color_tag_count = 0;
+int mte_restore_tag_count = 0;
 
 long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
 
     if (tag_info[tag_num].base) {
       char *old_base = tag_info[tag_num].base;
       char *old_bound = tag_info[tag_num].bound;
-      uncolor_count++;
+      MTE_DEBUG(uncolor_count++);
 #if 1
       tag_info_stack[tag_info_stack_ptr].base = old_base;
       tag_info_stack[tag_info_stack_ptr].bound = old_bound;
@@ -244,7 +240,7 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
     int i = tag_num;
     /* abort(); */
   /* } */
-    color_count++;
+    MTE_DEBUG(color_count++);
     for (char *cur = start; cur <= end; cur++)
       *cur=i;
     /* *start = i; // JSSHIN */
@@ -322,7 +318,7 @@ void mte_restore_tag_main(void * cur_sp) {
     /* tag_info[orig_tag].lru = tag_info_stack[tmp_stack_ptr].orig_lru; */
 
     tmp_stack_ptr--;
-    restore_count++;
+    MTE_DEBUG(restore_count++);
   }
 
   tag_info_stack_ptr = tmp_stack_ptr+1;
@@ -339,6 +335,7 @@ void __softboundcets_printf(const char* str, ...)
 
 extern int softboundcets_pseudo_main(int argc, char **argv);
 
+#ifdef MTE_DEBUG
 long load_deref_cnt = 0;
 long store_deref_cnt = 0;
 void atexit_hook() {
@@ -347,9 +344,12 @@ void atexit_hook() {
   printf("color_count = %ld\n", color_count);
   printf("uncolor_count = %ld\n", uncolor_count);
   printf("restore count = %ld\n", restore_count);
-  printf("average uncolor_score = %lf\n", uncolor_score/uncolor_count);
-  /* printAccessCount(); */
+  printf("mte_color_tag count = %ld\n", mte_color_tag_count);
+  printf("mte_restore_tag count = %ld\n", mte_restore_tag_count);
+  printf("=== object access count ===\n");
+  printAccessCount();
 }
+#endif
 
 int main(int argc, char **argv){
 
@@ -450,7 +450,9 @@ int main(int argc, char **argv){
   return_value = softboundcets_pseudo_main(argc, new_argv);
   __softboundcets_deallocate_shadow_stack_space();
 
+#ifdef MTE_DEBUG
   atexit(atexit_hook);
+#endif
   return return_value;
 }
 
