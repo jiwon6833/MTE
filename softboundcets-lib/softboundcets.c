@@ -57,7 +57,6 @@
 #include <execinfo.h>
 #endif
 #include "softboundcets.h"
-#include "/home/jsshin/projects/mte/midfat_riscv/gperftools-metalloc/src/base/linux_syscall_support.h"
 
 __softboundcets_trie_entry_t** __softboundcets_trie_primary_table;
 
@@ -140,7 +139,7 @@ void __softboundcets_init(void)
   int* temp = malloc(1);
   __softboundcets_allocation_secondary_trie_allocate_range(0, (size_t)temp);
   #endif
-  __mte_tag_mem = sys_mmap(0, 0x0000100000000000 /* 8TB */, PROT_READ | PROT_WRITE, SOFTBOUNDCETS_MMAP_FLAGS, -1, 0);
+  __mte_tag_mem = mmap(0, 0x0000100000000000 /* 8TB */, PROT_READ | PROT_WRITE, SOFTBOUNDCETS_MMAP_FLAGS, -1, 0);
 }
 
 static void softboundcets_init_ctype(){  
