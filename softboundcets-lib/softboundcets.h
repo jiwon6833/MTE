@@ -243,14 +243,14 @@ void __softboundcets_global_init()
 #endif
 
 #define NUM_MTE_TAGS 16
-#define TAG_INFO_STACK_DEPTH 256000
+#define TAG_INFO_STACK_DEPTH 8192
 
 struct tag_info_struct {
   char * base;
   char * bound;
   /* int used; */
   /* void * sp; */
-  unsigned long lru;
+  /* unsigned long lru; */
 };
 
 struct tag_info_stack_struct {
@@ -259,7 +259,7 @@ struct tag_info_stack_struct {
   /* int used; */
   void * sp;
   int orig_tag;
-  void * orig_lru;
+  /* void * orig_lru; */
 };
 
 extern struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
@@ -270,7 +270,7 @@ extern int tag_info_stack_ptr;
 extern int mte_color_count;
 extern int mte_inc_lru_count;
 
-long mte_color_tag_main(char *base, char *bound, void * cur_sp);
+long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp);
 void mte_restore_tag_main(void * cur_sp);
 
 __WEAK_INLINE void mte_inc_lru() {
@@ -278,7 +278,7 @@ __WEAK_INLINE void mte_inc_lru() {
   /* mte_inc_lru_count++; */
 }
 
-__WEAK_INLINE long mte_color_tag(char* base, char *bound) {
+__WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
   /* mte_color_count++; */
   if (base==NULL)
     return 0;
@@ -286,7 +286,7 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound) {
   char * start = __mte_tag_mem + ((long)base >> 4);
   if (*start) {
     /* tag_info[*start].used++; */
-    tag_info[*start].lru = cur_lru;
+    /* tag_info[*start].lru = cur_lru; */
     return *start;
   }
 
@@ -294,7 +294,7 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound) {
   asm volatile ("mov %%rsp, %0\n\t"
                 : "=r" (cur_sp)
                 );
-  return mte_color_tag_main(base, bound, cur_sp);
+  return mte_color_tag_main(base, bound, tag_num, cur_sp);
 }
 #if 0
 __WEAK_INLINE void mte_uncolor_tag() {
