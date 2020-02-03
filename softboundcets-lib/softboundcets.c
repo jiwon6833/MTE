@@ -216,7 +216,7 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
     if (tag_info[tag_num].base) {
       char *old_base = tag_info[tag_num].base;
       char *old_bound = tag_info[tag_num].bound;
-      MTE_DEBUG(uncolor_count++);
+      _MTE_DEBUG(uncolor_count++);
 #if 1
       tag_info_stack[tag_info_stack_ptr].base = old_base;
       tag_info_stack[tag_info_stack_ptr].bound = old_bound;
@@ -240,7 +240,7 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
     int i = tag_num;
     /* abort(); */
   /* } */
-    MTE_DEBUG(color_count++);
+    _MTE_DEBUG(color_count++);
     for (char *cur = start; cur <= end; cur++)
       *cur=i;
     /* *start = i; // JSSHIN */
@@ -318,7 +318,7 @@ void mte_restore_tag_main(void * cur_sp) {
     /* tag_info[orig_tag].lru = tag_info_stack[tmp_stack_ptr].orig_lru; */
 
     tmp_stack_ptr--;
-    MTE_DEBUG(restore_count++);
+    _MTE_DEBUG(restore_count++);
   }
 
   tag_info_stack_ptr = tmp_stack_ptr+1;

@@ -246,9 +246,9 @@ void __softboundcets_global_init()
 #define TAG_INFO_STACK_DEPTH 8192
 
 #ifdef MTE_DEBUG
-#define MTE_DEBUG(x) do { x; } while (0)
+#define _MTE_DEBUG(x) do { x; } while (0)
 #else
-#define MTE_DEBUG(x) do { ; } while (0)
+#define _MTE_DEBUG(x) do { ; } while (0)
 #endif
 
 struct tag_info_struct {
@@ -286,7 +286,7 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
   if (base==NULL)
     return 0;
 
-  MTE_DEBUG(mte_color_tag_count++);
+  _MTE_DEBUG(mte_color_tag_count++);
   char * start = __mte_tag_mem + ((long)base >> 4);
   if (*start) {
     /* tag_info[*start].used++; */
@@ -308,7 +308,7 @@ __WEAK_INLINE void mte_uncolor_tag() {
 
 __WEAK_INLINE void mte_restore_tag() {
   /* cur_lru--; */
-  MTE_DEBUG(mte_restore_tag_count++);
+  _MTE_DEBUG(mte_restore_tag_count++);
 
   void * cur_sp;
   asm volatile ("mov %%rsp, %0\n\t"
