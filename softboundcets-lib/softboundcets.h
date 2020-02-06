@@ -275,6 +275,9 @@ struct tag_info_stack_struct {
 extern struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
 extern struct tag_info_struct tag_info[NUM_MTE_TAGS];
 extern int tag_info_stack_ptr;
+#ifndef RISCV
+extern char* __mte_tag_mem;
+#endif
 
 #ifdef MTE_DEBUG
 extern int mte_color_tag_count;
@@ -289,14 +292,24 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
     return 0;
 
   _MTE_DEBUG(mte_color_tag_count++);
-  char * start = __mte_tag_mem + ((long)base >> 4);
-  if (*start)
-    return *start;
+#ifdef RISCV
+  int base_tag = load_tag(base);
+#else
+  int base_tag = *(__mte_tag_mem + ((long)base >> 4));
+#endif
+  if (base_tag)
+    return base_tag;
 
   void * cur_sp;
+#ifdef RISCV
+  asm volatile ("mv %0, sp\n\t"
+                : "=r" (cur_sp)
+                );
+#else
   asm volatile ("mov %%rsp, %0\n\t"
                 : "=r" (cur_sp)
                 );
+#endif
   return mte_color_tag_main(base, bound, tag_num, cur_sp);
 }
 
@@ -304,9 +317,15 @@ __WEAK_INLINE void mte_restore_tag() {
   _MTE_DEBUG(mte_restore_tag_count++);
 
   void * cur_sp;
+#ifdef RISCV
+  asm volatile ("mv %0, sp\n\t"
+                : "=r" (cur_sp)
+                );
+#else
   asm volatile ("mov %%rsp, %0\n\t"
                 : "=r" (cur_sp)
                 );
+#endif
   int tmp_stack_ptr = tag_info_stack_ptr-1;
   if (tag_info_stack[tmp_stack_ptr].sp <= cur_sp)
     mte_restore_tag_main(cur_sp);

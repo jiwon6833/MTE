@@ -77,7 +77,9 @@ size_t* __softboundcets_stack_temporal_space_begin = NULL;
 
 void* malloc_address = NULL;
 
+#ifndef RISCV
 char* __mte_tag_mem = NULL;
+#endif
 
 __SOFTBOUNDCETS_NORETURN void __softboundcets_abort()
 {
@@ -139,7 +141,10 @@ void __softboundcets_init(void)
   int* temp = malloc(1);
   __softboundcets_allocation_secondary_trie_allocate_range(0, (size_t)temp);
   #endif
+
+#ifndef RISCV
   __mte_tag_mem = mmap(0, 0x0000100000000000 /* 8TB */, PROT_READ | PROT_WRITE, SOFTBOUNDCETS_MMAP_FLAGS, -1, 0);
+#endif
 }
 
 static void softboundcets_init_ctype(){  
@@ -203,23 +208,32 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
     if (tag_info_stack_ptr > TAG_INFO_STACK_DEPTH)
       abort();
 
+#ifdef RISCV
+    for (char *cur = (unsigned)old_base & 0xFFFFFFF0; cur < old_bound; cur += 16)
+      store_tag(cur, 0);
+#else
     char *tag_start = __mte_tag_mem + ((long)old_base >> 4);
     char *tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=0;
+#endif
   }
 
+  _MTE_DEBUG(color_count++);
+#ifdef RISCV
+  for (char *cur = (unsigned)base & 0xFFFFFFF0; cur < bound; cur += 16)
+    store_tag(cur, tag_num);
+#else
   char * start = __mte_tag_mem + ((long)base >> 4);
   char * end = __mte_tag_mem + ((long)(bound-1) >> 4);
-  int i = tag_num;
-  _MTE_DEBUG(color_count++);
   for (char *cur = start; cur <= end; cur++)
-    *cur=i;
+    *cur=tag_num;
+#endif
 
-  tag_info[i].base = base;
-  tag_info[i].bound = bound;
+  tag_info[tag_num].base = base;
+  tag_info[tag_num].bound = bound;
 
-  return i;
+  return tag_num;
 }
 
 void mte_restore_tag_main(void * cur_sp) {
@@ -231,20 +245,28 @@ void mte_restore_tag_main(void * cur_sp) {
     char *base = tag_info[orig_tag].base;
     char *bound = tag_info[orig_tag].bound;
 
+#ifdef RISCV
+    for (char *cur = (unsigned)base & 0xFFFFFFF0; cur < bound; cur += 16)
+      store_tag(cur, 0);
+#else
     char *tag_start =  __mte_tag_mem + ((long)base >> 4);
     char *tag_end =  __mte_tag_mem + ((long)(bound-1) >> 4);
-
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=0;
+#endif
 
     char *old_base = tag_info_stack[tmp_stack_ptr].base;
     char *old_bound = tag_info_stack[tmp_stack_ptr].bound;
 
+#ifdef RISCV
+    for (char *cur = (unsigned)old_base & 0xFFFFFFF0; cur < old_bound; cur += 16)
+      store_tag(cur, orig_tag);
+#else
     tag_start = __mte_tag_mem + ((long)old_base >> 4);
     tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
-
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=orig_tag;
+#endif
 
     tag_info[orig_tag].base = old_base;
     tag_info[orig_tag].bound = old_bound;
