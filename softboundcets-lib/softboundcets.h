@@ -50,6 +50,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+
+#include "tag.h"
+
 #ifdef METALLOC
 #include "/home/jwseo/workspace/MTE/midfat/metapagetable/metapagetable_core.h"
 const static int pageSize = 4096;
