@@ -174,121 +174,56 @@ static void softboundcets_init_ctype(){
 #endif // __linux ends 
 }
 
-#if 0
-struct tag_info_struct tag_info[NUM_MTE_TAGS] = {
-  { 0, 0, 0 }, /* tag 0 unused */
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 0, 0 }
-};
-#endif
-
 struct tag_info_struct tag_info[NUM_MTE_TAGS];
-
 struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH] = {
   {0, 0, 0xFFFFFFFFFFFFFFFF, 0, 0}  // special value for the first entry
 };
 
-/* int stack_depth = 0; */
-unsigned long cur_lru = 0;
 int tag_info_stack_ptr = 1;
 
+#ifdef MTE_DEBUG
 int color_count = 0;
 int uncolor_count = 0;
 int restore_count = 0;
 int mte_color_tag_count = 0;
 int mte_restore_tag_count = 0;
+#endif
 
 long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
+  if (tag_info[tag_num].base) {
+    char *old_base = tag_info[tag_num].base;
+    char *old_bound = tag_info[tag_num].bound;
+    _MTE_DEBUG(uncolor_count++);
 
-    if (tag_info[tag_num].base) {
-      char *old_base = tag_info[tag_num].base;
-      char *old_bound = tag_info[tag_num].bound;
-      _MTE_DEBUG(uncolor_count++);
-#if 1
-      tag_info_stack[tag_info_stack_ptr].base = old_base;
-      tag_info_stack[tag_info_stack_ptr].bound = old_bound;
-      /* tag_info_stack[tag_info_stack_ptr].used = tag_info[tag_num].used; */
-      /* tag_info_stack[tag_info_stack_ptr].orig_lru = tag_info[tag_num].lru; */
-      tag_info_stack[tag_info_stack_ptr].sp = cur_sp;
-      tag_info_stack[tag_info_stack_ptr].orig_tag = tag_num;
-      tag_info_stack_ptr++;
-      if (tag_info_stack_ptr > TAG_INFO_STACK_DEPTH)
-        abort();
-#endif
-      char *tag_start = __mte_tag_mem + ((long)old_base >> 4);
-      char *tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
-      for (char *cur = tag_start; cur <= tag_end; cur++)
-        *cur=0;
-      /* *tag_start=0; // JSSHIN */
-    }
+    tag_info_stack[tag_info_stack_ptr].base = old_base;
+    tag_info_stack[tag_info_stack_ptr].bound = old_bound;
+    tag_info_stack[tag_info_stack_ptr].sp = cur_sp;
+    tag_info_stack[tag_info_stack_ptr].orig_tag = tag_num;
+    tag_info_stack_ptr++;
+    if (tag_info_stack_ptr > TAG_INFO_STACK_DEPTH)
+      abort();
+
+    char *tag_start = __mte_tag_mem + ((long)old_base >> 4);
+    char *tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
+    for (char *cur = tag_start; cur <= tag_end; cur++)
+      *cur=0;
+  }
 
   char * start = __mte_tag_mem + ((long)base >> 4);
   char * end = __mte_tag_mem + ((long)(bound-1) >> 4);
-    int i = tag_num;
-    /* abort(); */
-  /* } */
-    _MTE_DEBUG(color_count++);
-    for (char *cur = start; cur <= end; cur++)
-      *cur=i;
-    /* *start = i; // JSSHIN */
+  int i = tag_num;
+  _MTE_DEBUG(color_count++);
+  for (char *cur = start; cur <= end; cur++)
+    *cur=i;
 
-  /* tag_info[i].used++; */
   tag_info[i].base = base;
   tag_info[i].bound = bound;
-  /* tag_info[i].sp = cur_sp; */
-  /* tag_info[i].lru = cur_lru; */
 
   return i;
 }
 
-#if 0
-void mte_uncolor_tag() {
-  /* if (base==NULL) */
-  /*   return; */
-
-  cur_lru--;
-
-  /* char * start = __mte_tag_mem + ((long)base >> 4); */
-  /* char * end = __mte_tag_mem + ((long)(bound-1) >> 4); */
-
-  /* if (tag_info[*start].used <= 0) */
-  /*   abort(); */
-
-  /* tag_info[*start].used--; */
-  /* if (tag_info[*start].used) */
-  /*   return; */
-
-  /* tag_info[*start].base = 0; */
-  /* tag_info[*start].bound = 0; */
-
-  /* for (char *cur = start; cur <= end; cur++) */
-  /*   *cur=0; */
-}
-#endif
-
 void mte_restore_tag_main(void * cur_sp) {
   int tmp_stack_ptr = tag_info_stack_ptr-1;
-#if 0
-  int tmp_lru = tag_info_stack[tmp_stack_ptr].lru;
-  for (int i = tmp_stack_ptr; i >= 0; i--) {
-    if (tag_info_stack[tmp_stack_ptr].lru > tmp_lru)
-      abort();
-    tmp_lru = tag_info_stack[tmp_stack_ptr].lru;
-  }
-#endif
   // tag_info_stack[0].sp has MAX value so don't need to check tmp_stack_ptr >= 0
   while (tag_info_stack[tmp_stack_ptr].sp <= cur_sp) {
     int orig_tag = tag_info_stack[tmp_stack_ptr].orig_tag;
@@ -301,7 +236,6 @@ void mte_restore_tag_main(void * cur_sp) {
 
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=0;
-    /* *tag_start = 0; // JSSHIN */
 
     char *old_base = tag_info_stack[tmp_stack_ptr].base;
     char *old_bound = tag_info_stack[tmp_stack_ptr].bound;
@@ -311,11 +245,9 @@ void mte_restore_tag_main(void * cur_sp) {
 
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=orig_tag;
-    /* *tag_start = orig_tag; // JSSHIN */
 
     tag_info[orig_tag].base = old_base;
     tag_info[orig_tag].bound = old_bound;
-    /* tag_info[orig_tag].lru = tag_info_stack[tmp_stack_ptr].orig_lru; */
 
     tmp_stack_ptr--;
     _MTE_DEBUG(restore_count++);

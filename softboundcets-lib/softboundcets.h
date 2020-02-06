@@ -50,10 +50,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
-//#include "/home/jsshin/projects/mte/midfat_riscv/autosetup.dir/packages/src/llvm/include/llvm/mte/metapagetable_core.h"
+#ifdef METALLOC
 #include "/home/jwseo/workspace/MTE/midfat/metapagetable/metapagetable_core.h"
 const static int pageSize = 4096;
-
+#endif
 
 // gykim sptial
 /* #if 0 */
@@ -263,24 +263,17 @@ void __softboundcets_global_init()
 struct tag_info_struct {
   char * base;
   char * bound;
-  /* int used; */
-  /* void * sp; */
-  /* unsigned long lru; */
 };
 
 struct tag_info_stack_struct {
   char * base;
   char * bound;
-  /* int used; */
   void * sp;
   int orig_tag;
-  /* void * orig_lru; */
 };
 
 extern struct tag_info_stack_struct tag_info_stack[TAG_INFO_STACK_DEPTH];
 extern struct tag_info_struct tag_info[NUM_MTE_TAGS];
-extern char* __mte_tag_mem;
-extern unsigned long cur_lru;
 extern int tag_info_stack_ptr;
 
 #ifdef MTE_DEBUG
@@ -297,11 +290,8 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
 
   _MTE_DEBUG(mte_color_tag_count++);
   char * start = __mte_tag_mem + ((long)base >> 4);
-  if (*start) {
-    /* tag_info[*start].used++; */
-    /* tag_info[*start].lru = cur_lru; */
+  if (*start)
     return *start;
-  }
 
   void * cur_sp;
   asm volatile ("mov %%rsp, %0\n\t"
@@ -309,14 +299,8 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
                 );
   return mte_color_tag_main(base, bound, tag_num, cur_sp);
 }
-#if 0
-__WEAK_INLINE void mte_uncolor_tag() {
-  cur_lru--;
-}
-#endif
 
 __WEAK_INLINE void mte_restore_tag() {
-  /* cur_lru--; */
   _MTE_DEBUG(mte_restore_tag_count++);
 
   void * cur_sp;
