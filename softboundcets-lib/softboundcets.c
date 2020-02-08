@@ -176,6 +176,17 @@ static void softboundcets_init_ctype(){
   
 #endif
 
+  ptr = (void*) __ctype_toupper_loc();
+  base_ptr = (void*) (*(__ctype_toupper_loc()));
+  __softboundcets_allocation_secondary_trie_allocate(base_ptr);
+  __softboundcets_metadata_store(ptr, ((char*) base_ptr - 129*2), 
+                                 ((char*) base_ptr + 256*2));
+
+  ptr = (void*) __ctype_tolower_loc();
+  base_ptr = (void*) (*(__ctype_tolower_loc()));
+  __softboundcets_allocation_secondary_trie_allocate(base_ptr);
+  __softboundcets_metadata_store(ptr, ((char*) base_ptr - 129*2), 
+                                 ((char*) base_ptr + 256*2));
 #endif // __linux ends 
 }
 
