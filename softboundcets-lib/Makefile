@@ -25,12 +25,13 @@ softboundcets_rt_lto_dbg: softboundcets.h softboundcets-checks.c softboundcets.c
 softboundcets_riscv_rt_lto: softboundcets.h softboundcets-checks.c softboundcets.c softboundcets-wrappers.c 
 	mkdir -p lto
 	mkdir -p lto_main
+	riscv64-unknown-linux-gnu-gcc ./tag_mem.S -c -o tag_mem.o
 	clang $(RISCV_CFLAGS) -flto -c softboundcets-checks.c -o lto/softboundcets-checks.lto.o
 	clang $(RISCV_CFLAGS) -S softboundcets.c -o lto_main/softboundcets.s
 	clang -target riscv64-unknown-linux-gnu -c -o lto_main/softboundcets.o lto_main/softboundcets.s
 	clang $(RISCV_CFLAGS) -S softboundcets-wrappers.c -o lto_main/softboundcets-wrappers.s
 	clang -target riscv64-unknown-linux-gnu -c -o lto_main/softboundcets-wrappers.o lto_main/softboundcets-wrappers.s
-	llvm-ar rcs lto_main/libsoftboundcets_rt.a lto_main/softboundcets.o lto_main/softboundcets-wrappers.o
+	llvm-ar rcs lto_main/libsoftboundcets_rt.a lto_main/softboundcets.o lto_main/softboundcets-wrappers.o tag_mem.o
 	llvm-ranlib lto_main/libsoftboundcets_rt.a
 
 clean:

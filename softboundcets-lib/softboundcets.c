@@ -220,8 +220,13 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
       abort();
 
 #ifdef RISCV
-    for (char *cur = (unsigned)old_base & 0xFFFFFFF0; cur < old_bound; cur += 16)
-      store_tag(cur, 0);
+    char *cur = (unsigned)old_base & 0xFFFFFFF0;
+    int size  = (old_bound - old_base)/16;
+    if((int)old_bound & 0x0F)
+      size += 1;
+
+    tag_memset(cur,0,size);
+
 #else
     char *tag_start = __mte_tag_mem + ((long)old_base >> 4);
     char *tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
@@ -232,8 +237,14 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
 
   _MTE_DEBUG(color_count++);
 #ifdef RISCV
-  for (char *cur = (unsigned)base & 0xFFFFFFF0; cur < bound; cur += 16)
-    store_tag(cur, tag_num);
+  char *cur2 = (unsigned)base & 0xFFFFFFF0;
+  int size2  = (bound - base)/16;
+
+  if((int)bound & 0x0F)
+    size2 += 1;
+  
+  tag_memset(cur2,tag_num,size2);  
+
 #else
   char * start = __mte_tag_mem + ((long)base >> 4);
   char * end = __mte_tag_mem + ((long)(bound-1) >> 4);
@@ -257,8 +268,13 @@ void mte_restore_tag_main(void * cur_sp) {
     char *bound = tag_info[orig_tag].bound;
 
 #ifdef RISCV
-    for (char *cur = (unsigned)base & 0xFFFFFFF0; cur < bound; cur += 16)
-      store_tag(cur, 0);
+    char *cur = (unsigned)base & 0xFFFFFFF0;
+    int size  = (bound - base)/16;
+
+    if((int)bound & 0x0F)
+      size += 1;
+    
+    tag_memset(cur,0,size);
 #else
     char *tag_start =  __mte_tag_mem + ((long)base >> 4);
     char *tag_end =  __mte_tag_mem + ((long)(bound-1) >> 4);
@@ -270,8 +286,13 @@ void mte_restore_tag_main(void * cur_sp) {
     char *old_bound = tag_info_stack[tmp_stack_ptr].bound;
 
 #ifdef RISCV
-    for (char *cur = (unsigned)old_base & 0xFFFFFFF0; cur < old_bound; cur += 16)
-      store_tag(cur, orig_tag);
+    char * cur2 = (unsigned)old_base & 0xFFFFFFF0;
+    int size2  = (old_bound - old_base)/16;
+
+    if((int)old_bound & 0x0F)
+      size2 += 1;
+
+    tag_memset(cur2,orig_tag,size2);
 #else
     tag_start = __mte_tag_mem + ((long)old_base >> 4);
     tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
