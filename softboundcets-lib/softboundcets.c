@@ -99,11 +99,27 @@ __SOFTBOUNDCETS_NORETURN void __softboundcets_abort()
   abort();
 }
 
+void __softboundcets_bt()
+{
+  size_t size;
+  void *array[100];
+  
+#if !defined (__FreeBSD__)
+  size = backtrace(array, 100);
+  backtrace_symbols_fd(array, size, fileno(stderr));
+#endif
+  
+  fprintf(stderr, "\n\n");
+}
+
 static int softboundcets_initialized = 0;
 
 __NO_INLINE void __softboundcets_stub(void) {
   return;
 }
+
+extern void *freq_obj[16];
+
 void __softboundcets_init(void) 
 {
   if (softboundcets_initialized != 0) {
@@ -145,6 +161,17 @@ void __softboundcets_init(void)
 #ifndef RISCV
   __mte_tag_mem = mmap(0, 0x0000100000000000 /* 8TB */, PROT_READ | PROT_WRITE, SOFTBOUNDCETS_MMAP_FLAGS, -1, 0);
 #endif
+
+  FILE * fp = fopen("malloc_monitor", "r");
+  if (fp != NULL) {
+    char *line = malloc(32);
+    size_t len = 32;
+    int i = 0;
+    while (getline(&line, &len, fp) != -1)
+      freq_obj[i++] = (void *)strtol(line, NULL, 0);
+    free(line);
+    fclose(fp);
+  }
 }
 
 static void softboundcets_init_ctype(){  
