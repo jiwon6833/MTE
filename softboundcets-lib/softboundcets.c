@@ -230,6 +230,8 @@ int uncolor_count = 0;
 int restore_count = 0;
 int mte_color_tag_count = 0;
 int mte_restore_tag_count = 0;
+size_t coloring_size=0;
+size_t restore_coloring_size=0;
 #endif
 
 long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
@@ -275,6 +277,10 @@ long mte_color_tag_main(char *base, char *bound, int tag_num, void * cur_sp) {
 #else
   char * start = __mte_tag_mem + ((long)base >> 4);
   char * end = __mte_tag_mem + ((long)(bound-1) >> 4);
+  #ifdef MTE_DEBUG
+  size_t tmp_size = end-start;
+  #endif 
+  _MTE_DEBUG(coloring_size+=tmp_size);
   for (char *cur = start; cur <= end; cur++)
     *cur=tag_num;
 #endif
@@ -323,6 +329,11 @@ void mte_restore_tag_main(void * cur_sp) {
 #else
     tag_start = __mte_tag_mem + ((long)old_base >> 4);
     tag_end = __mte_tag_mem + ((long)(old_bound-1) >> 4);
+#ifdef MTE_DEBUG
+    size_t tmp_size2 = tag_end- tag_start;
+#endif 
+  _MTE_DEBUG(restore_coloring_size+=tmp_size2);
+
     for (char *cur = tag_start; cur <= tag_end; cur++)
       *cur=orig_tag;
 #endif
@@ -359,6 +370,7 @@ void atexit_hook() {
   printf("restore count = %ld\n", restore_count);
   printf("mte_color_tag count = %ld\n", mte_color_tag_count);
   printf("mte_restore_tag count = %ld\n", mte_restore_tag_count);
+  printf("coloring operations = %ld\n", coloring_size+restore_coloring_size);
   printf("=== object access count ===\n");
   printAccessCount();
 }

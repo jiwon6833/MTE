@@ -1,6 +1,7 @@
 all: softboundcets_rt_lto
 
 CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O2 -fno-strict-aliasing -g # gykim spatial
+DBG_CFLAGS=-Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O0 -fno-strict-aliasing -g
 RISCV_CFLAGS=-target riscv64-unknown-linux-gnu -Wall -pedantic  -D__SOFTBOUNDCETS_SPATIAL -O2 -fno-strict-aliasing -mriscv=RV64IMAFD -nostdinc -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/lib/gcc/riscv-linux/4.6.1/include -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/lib/gcc/riscv-linux/4.6.1/include-fixed -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/sysroot/usr/include -isystem /home/jwseo/workspace/MTE/riscv/lowrisc-chip/riscv/riscv-linux/include  -DRISCV
 
 softboundcets_rt_lto: softboundcets.h softboundcets-checks.c softboundcets.c softboundcets-wrappers.c 
@@ -15,10 +16,10 @@ softboundcets_rt_lto: softboundcets.h softboundcets-checks.c softboundcets.c sof
 softboundcets_rt_lto_dbg: softboundcets.h softboundcets-checks.c softboundcets.c softboundcets-wrappers.c stat.cc
 	mkdir -p lto
 	mkdir -p lto_main
-	clang $(CFLAGS) -DMTE_DEBUG -flto -c softboundcets-checks.c -o lto/softboundcets-checks.lto.o
-	clang $(CFLAGS) -DMTE_DEBUG -c softboundcets.c -o lto_main/softboundcets.o
-	clang $(CFLAGS) -DMTE_DEBUG -c softboundcets-wrappers.c -o lto_main/softboundcets-wrappers.o
-	clang++ $(CFLAGS) -DMTE_DEBUG -c stat.cc -o lto_main/stat.o
+	clang $(DBG_CFLAGS) -DMTE_DEBUG -flto -c softboundcets-checks.c -o lto/softboundcets-checks.lto.o
+	clang $(DBG_CFLAGS) -DMTE_DEBUG -c softboundcets.c -o lto_main/softboundcets.o
+	clang $(DBG_CFLAGS) -DMTE_DEBUG -c softboundcets-wrappers.c -o lto_main/softboundcets-wrappers.o
+	clang++ $(DBG_CFLAGS) -DMTE_DEBUG -c stat.cc -o lto_main/stat.o
 	llvm-ar rcs lto_main/libsoftboundcets_rt.a lto_main/softboundcets.o lto_main/softboundcets-wrappers.o lto_main/stat.o
 	llvm-ranlib lto_main/libsoftboundcets_rt.a
 
