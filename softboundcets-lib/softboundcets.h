@@ -317,6 +317,8 @@ __WEAK_INLINE long mte_color_tag(char* base, char *bound, int tag_num) {
 }
 
 __WEAK_INLINE void mte_restore_tag() {
+  // top 15, gzip, art, equke, sjeng, lbm
+  //return;
   _MTE_DEBUG(mte_restore_tag_count++);
 
   void * cur_sp;

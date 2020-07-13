@@ -1581,6 +1581,9 @@ __WEAK_INLINE long softboundcets_atol(const char* nptr){
 
 void *freq_obj[16] = {0};
 
+#ifdef MTE_DEBUG
+void incMallocCount(void * base);
+#endif
 __WEAK_INLINE void* softboundcets_realloc(void* ptr, size_t size){
   
 #if 0
@@ -1589,6 +1592,7 @@ __WEAK_INLINE void* softboundcets_realloc(void* ptr, size_t size){
 #endif
    void* ret_ptr = realloc(ptr, size);
 #ifdef MTE_DEBUG
+   incMallocCount(ret_ptr);
    for (int i = 0; i < sizeof(freq_obj) / sizeof(freq_obj[0]); i++)
      if (freq_obj[i] == ret_ptr) {
        printf("Realloc: 0x%lx\n", ret_ptr);
@@ -1633,6 +1637,7 @@ __WEAK_INLINE void* softboundcets_realloc(void* ptr, size_t size){
    void* ret_ptr = calloc(nmemb, size);   
    if(ret_ptr != NULL) {    
 #ifdef MTE_DEBUG
+        incMallocCount(ret_ptr);
      for (int i = 0; i < sizeof(freq_obj) / sizeof(freq_obj[0]); i++)
        if (freq_obj[i] == ret_ptr) {
          printf("Calloc: 0x%lx\n", ret_ptr);
@@ -1695,6 +1700,7 @@ __WEAK_INLINE void* softboundcets_malloc(size_t size) {
   }
   else{
 #ifdef MTE_DEBUG
+       incMallocCount(ret_ptr);
     for (int i = 0; i < sizeof(freq_obj) / sizeof(freq_obj[0]); i++)
       if (freq_obj[i] == ret_ptr) {
         printf("Malloc: 0x%lx\n", ret_ptr);
